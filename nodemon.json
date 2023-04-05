@@ -1,0 +1,5 @@
+{
+    "watch" : ["src"],
+    "ext" : "tsc",
+    "exec" : "npx ts-node ./src/app.ts"
+}

@@ -1,0 +1,353 @@
+{
+    "swagger" : "2.0",
+    "info" : {
+        "version" : "1.0.0",
+        "title" : "Spill API"
+    },
+    "tags": [
+        {
+          "name": "Auth",
+          "description": "Endpoint untuk autentikasi"
+        },
+        {
+          "name": "Home",
+          "description": "Endpoint untuk halaman beranda"
+        }
+    ],
+    "securityDefinitions": {
+        "Bearer": {
+          "type": "apiKey",
+          "name": "Authorization",
+          "in": "header"
+        }
+      },
+    "paths" : {
+        "/auth/register" : {
+            "post" : {
+                "tags" : [
+                    "Auth"
+                ],
+                "summary" : "Registrasi pengguna",
+                "description" : "Endpoint ini digunakan untuk melakukan registrasi pengguna",
+                "consumes" : [
+                    "application/json"
+                ],
+                "produces" : [
+                    "application/json"
+                ],
+                "parameters" : [
+                    {
+                        "name" : "body",
+                        "in" : "body",
+                        "description" : "Objek JSON yang berisi informasi registrasi pengguna",
+                        "required" : true,
+                        "schema" : {
+                            "type" : "object",
+                                "properties" : {
+                                    "phone" : {
+                                        "type" : "string",
+                                        "required": "true",
+                                        "default" : "0895389200222"
+                                    },
+                                    "password" : {
+                                        "type" : "string",
+                                        "required": "true",
+                                        "default" : "password"
+                                    },
+                                    "fullname" : {
+                                        "type" : "string",
+                                        "required": "true",
+                                        "default" : "testing spill"
+                                    },
+                                    "username" : {
+                                        "type" : "string",
+                                        "required": "true",
+                                        "default" : "spill"
+                                    }
+                                }
+                        }
+                    }
+                ],
+                "responses" : {
+                    "201" : {
+                        "description" : "Registrasi berhasil",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message" : {
+                                    "type": "string",
+                                    "default" : "User created successfully"
+                                },
+                                "user" : {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string",
+                                            "default" : "10e8069c-641f-4704-b2d5-a81d26a7b2c6"
+                                        },
+                                        "fullname": {
+                                            "type": "string",
+                                            "default" : "testing"
+                                        },
+                                        "username": {
+                                            "type": "string",
+                                            "default" : "testing"
+                                        },
+                                        "password" : {
+                                            "type": "string",
+                                            "default" : "$2b$10$5krnLMo54VyzNLE62waLyOMuOkFtTEyYZzfe7OQQElYRWhBZYRLM."
+                                        },
+                                        "phone" : {
+                                            "type": "string",
+                                            "default" : "62895389200222"
+                                        },
+                                        "role" : {
+                                            "type": "string",
+                                            "default" : "user"
+                                        },
+                                        "kode" : {
+                                            "type": "integer",
+                                            "default" : 156789
+                                        },
+                                        "verified" : {
+                                            "type": "boolean",
+                                            "default" : false
+                                        },
+                                        "updateAt" : {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "createAt" : {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }, 
+                    "400" : {
+                        "description" : "Bad request"
+                    },
+                    "404" : {
+                        "description" : "Nomor tidak terdaftar pada Whatsapp",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message" : {
+                                    "type": "string",
+                                    "default" : "Phone not registered in whatsapp"
+                                }
+                            }
+                        }
+                    },
+                    "409" : {
+                        "description" : "Nomor sudah terdaftar",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message" : {
+                                    "type": "string",
+                                    "default" : "Phone already exists"
+                                }
+                            }
+                        }
+                    },
+                    "422" : {
+                        "description" : "Jika salah satu request tidak ada contoh nya phone dan password",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message" : {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "default" : 
+                                    [
+                                        "\"password\" is required",
+                                        "\"phone\" is required"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "500" : {
+                        "description" : "Internal server error atau Error when login use"
+                    }
+                }
+            }
+        },
+        "/auth/verify" :{
+            "post" : {
+                "tags" : [
+                    "Auth"
+                ],
+                "summary" : "Verifikasi Pengguna",
+                "description" : "Endpoint ini digunakan untuk melakukan verifikasi pengguna apakah nomor nya valid",
+                "consumes" : [
+                    "application/json"
+                ],
+                "produces" : [
+                    "application/json"
+                ],
+                "parameters" : [
+                    {
+                        "name" : "body",
+                        "in" : "body",
+                        "description" : "Objek JSON yang berisi verifikasi",
+                        "required" : true,
+                        "schema" : {
+                            "type" : "object",
+                                "properties" : {
+                                    "id" : {
+                                        "type" : "string",
+                                        "required": "true",
+                                        "default" : "c345d435-89ba-4a98-941e-2b6c4dcb81bd"
+                                    },
+                                    "kode" : {
+                                        "type" : "integer",
+                                        "required": "true",
+                                        "default" : "611917"
+                                    }
+                                }
+                        }
+                    }
+                ],
+                "responses" : {
+                    "201" : {
+                        "description" : "Verifikasi Berhasil",
+                        "schema" : {
+                            "type" : "object",
+                            "properties" : {
+                                "message" : {
+                                    "type" : "string",
+                                    "default" : "User verified successfully"
+                                },
+                                "token" : {
+                                    "type" : "string",
+                                    "default" : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjllNGU2OGFmLWQ1ZjItNDVlZS04Nzk2LTA0OGQ4Y2RhZDY3NCIsImZ1bGxuYW1lIjoidGVzdGluZyIsInBob25lIjoiNjI4MTgxODI2MTk3NiIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNjgwNjgwNDE3LCJleHAiOjE2ODA3NjY4MTd9.wZ4lTYVNF23Wnp47ECj9htbu4NrjrmWkWXVtQKvQMds"
+                                }
+                            }
+                        }
+                    },
+                    "401" : {
+                        "description" : "Id atau Kode invalid",
+                        "schema" : {
+                            "type" : "object",
+                            "properties" : {
+                                "message" : {
+                                    "type" : "string",
+                                    "default" : "Id or Kode invalid"
+                                }
+                            }
+                        }
+                    },
+                    "500" : {
+                        "description" : "Internal server error",
+                        "schema" : {
+                            "type" : "object",
+                            "properties" : {
+                                "message" : {
+                                    "type" : "string",
+                                    "default" : "Internal server error"
+                                }
+                            }
+                        }
+                    }
+
+                }
+            }
+        },
+        "/auth/login" : {
+            "post" : {
+                "tags" : [
+                    "Auth"
+                ],
+                "summary" : "Login pengguna",
+                "description" : "Endpoint ini digunakan untuk melakukan login pengguna",
+                "consumes" : [
+                    "application/json"
+                ],
+                "produces" : [
+                    "application/json"
+                ],
+                "parameters" : [
+                    {
+                        "name" : "body",
+                        "in" : "body",
+                        "description" : "Objek JSON yang berisi informasi login pengguna",
+                        "required" : true,
+                        "schema" : {
+                            "type": "object",
+                                "properties": {
+                                    "phone": {
+                                        "type": "string",
+                                        "required": "true",
+                                        "default" : "081818261976"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "required": "true",
+                                        "default" : "aaaaaa"
+                                    }
+                                }
+                        }
+                    }
+                ],
+                "responses" : {
+                    "200" : {
+                        "description" : "Login berhasil",
+                        "schema": {
+                            "$ref": "#/definitions/LoginResponse"
+                        }
+                    }, 
+                    "400" : {
+                        "description" : "Bad request"
+                    },
+                    "401" : {
+                        "description" : "Unauthorized"
+                    },
+                    "404" : {
+                        "description" : "Phone not registered in whatsapp"
+                    },
+                    "500" : {
+                        "description" : "Internal server error atau Error when login use"
+                    }
+                }
+            }
+        },
+        "/auth/send-token" : {
+            "get": {
+                "tags" : [
+                    "Auth"
+                ],
+                "security": [
+                  {
+                    "Bearer": []
+                  }
+                ],
+                "summary" : "Request Lupa Password",
+                "description" : "Endpoint ini digunakan untuk melakukan request lupa password yang akan mengirimkan url ke wa",
+                "responses": {
+                  "200": {
+                    "description": "OK"
+                  },
+                  "401": {
+                    "description": "Unauthorized"
+                  }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "LoginResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

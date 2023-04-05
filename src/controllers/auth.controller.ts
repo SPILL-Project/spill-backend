@@ -1,15 +1,34 @@
-const {User} = require("../models")
+const {User} = require("../db/models")
 const bcrypt = require("bcrypt")
 const {client:wa} = require('../wa');
 const { v4 : uuidv4 } = require('uuid');
 const jsonwebtoken = require('jsonwebtoken');
 require('dotenv').config();
 
-exports.registerUser = async (req, res) => {
-    try{
-        const {fullname, password, phone} = req.body;
+import UserCreateType from "../types/user.type"
 
-        // phone dan email tidak boleh sama
+import { Request, Response } from "express";
+
+import UserRequestData from "../types/user.type";
+import { registerValidation } from "../validations/auth.validation";
+
+exports.registerUser = async (req: Request, res: Response) => {
+    try{
+
+        // memvalidasi sebuah request yang masuk
+        const {error, value} = registerValidation(req.body)
+
+        // jika request tidak sesuai ketentuan akan mengirimkan pesan error
+        if (error) {
+            const errorMessage = error.details.map(d => d.message);
+            return res.status(422).json({ message: errorMessage });
+        }
+
+        // mendapatkan nilai dari hasil validasi
+        const {fullname, password, username} = value;
+        const phone = `62${value.phone.slice(1)}`;
+
+        // validasi jika phone tidak boleh sama dengan yang lain
         const userPhone = await User.findOne({
             where: {
                 phone
@@ -17,8 +36,17 @@ exports.registerUser = async (req, res) => {
         })
 
         if(userPhone){
-            return res.status(400).json({
+            return res.status(409).json({
                 message: "Phone already exists"
+            });
+        }
+
+        // cek apakah phone terdaftar di wa
+        const isRegistered = await wa.isRegisteredUser(`${phone}@c.us`)
+
+        if(!isRegistered){
+            return res.status(404).json({
+                message: "Phone not registered in whatsapp"
             });
         }
         
@@ -26,31 +54,32 @@ exports.registerUser = async (req, res) => {
         
         try{
             await wa.sendMessage(`${phone}@c.us`, `Halo ${fullname}, Selamat datang di aplikasi kami. Silahkan verifikasi akun anda dengan kode berikut: ${kode}`);
+
+            const user: UserCreateType = await User.create({
+                id: uuidv4(),
+                fullname,
+                username,
+                password : await bcrypt.hash(password, await bcrypt.genSalt(10)),
+                phone,
+                role: "user",
+                kode,
+                verified: false
+            })
+    
+            res.status(201).json({
+                message: "User created successfully",
+                user
+            });
+            
         }catch(error){
             // send respond error wa server
             return res.status(500).json({
-                message: "Wa Error",
+                message: "Error when create account user",
                 error
             });
         }
         
-        const user = await User.create({
-            id: uuidv4(),
-            fullname,
-            password : await bcrypt.hash(password, await bcrypt.genSalt(10)),
-            phone,
-            role: "user",
-            kode,
-            verified: false
-        });
-
-        res.status(201).json({
-            message: "User created successfully",
-            user
-        });
-        
     } catch (error){
-        console.log(error)
         res.status(500).json({
             message: "Internal server error",
             error
@@ -58,7 +87,7 @@ exports.registerUser = async (req, res) => {
     }
 }
 
-exports.verifyUser = async (req, res) => {
+exports.verifyUser = async (req: Request, res: Response) => {
     try{
         const {id, kode} = req.body;
         
@@ -67,21 +96,19 @@ exports.verifyUser = async (req, res) => {
             where: {
                 id
             }
-        })
+        })        
 
-        if(!userData){
+        if(!userData || userData.kode != kode){
             return res.status(401).json({
-                message: "Id invalid"
+                message: "Id or Kode invalid"
             });
         }
 
-        if(userData.kode != kode){
-            return res.status(401).json({
-                message: "Kode invalid"
-            });
-        }
+        // kirim pesan berhasil di validasi
+        await wa.sendMessage(`${userData.phone}@c.us`, 
+            `Halo ${userData.fullname}, akun anda berhasil diverifikasi`);
 
-        const user = await User.update({
+        await User.update({
             verified: true,
             kode: null
         }, {
@@ -91,18 +118,18 @@ exports.verifyUser = async (req, res) => {
         })
 
         // return token
-        const token = jsonwebtoken.sign({
+        const token: String = jsonwebtoken.sign({
             id: userData.id,
             fullname: userData.fullname,
-            role: userData.role
+            phone: userData.phone,
+            role: userData.role,
         }, process.env.JWT_KEY, {
             expiresIn: process.env.TIMEEXPIRES
         });
 
-        res.status(200).json({
+        res.status(201).json({
             message: "User verified successfully",
             token,
-            user
         });
 
     }
@@ -115,8 +142,9 @@ exports.verifyUser = async (req, res) => {
     }
 }
 
-exports.loginUser = async (req, res) => {
-    const {phone, password} = req.body;
+exports.loginUser = async (req: Request, res: Response) => {
+    const {password} = req.body;
+    const phone = `62${req.body.phone.slice(1)}`;
 
     try{
         // cari user by phone
@@ -143,6 +171,13 @@ exports.loginUser = async (req, res) => {
             });
         }
 
+        // jika tidak verified
+        if(!userData.verified){
+            return res.status(401).json({
+                message: "User not verified"
+            });
+        }
+
         // jika password benar, generate token
         const token = jsonwebtoken.sign({
             id: userData.id,
@@ -161,8 +196,7 @@ exports.loginUser = async (req, res) => {
             token
         });
 
-    }catch{
-        console.log(e)
+    }catch(error){
         res.status(500).json({
             message: "Internal server error",
             error
@@ -170,9 +204,9 @@ exports.loginUser = async (req, res) => {
     }
 }
 
-exports.sendTokenChangePassword = async (req, res) => {
+exports.sendTokenChangePassword = async (req: UserRequestData, res: Response) => {
     // make token jwt for forgot token password
-    const {id} = req.userData;
+    const {id} = req.userData ;
 
     try{
         const userData = await User.findOne({
@@ -187,35 +221,28 @@ exports.sendTokenChangePassword = async (req, res) => {
             });
         }
 
-        const token = jsonwebtoken.sign({
+        const token: String = jsonwebtoken.sign({
             id: userData.id,
-            fullname: userData.fullname,
-            username: userData.username,
-            email: userData.email,
-            phone: userData.phone,
-            role: userData.role,
-            verified: userData.verified
+            kode: Math.floor(100000 + Math.random() * 900000)
         }, process.env.JWT_KEY, {
-            expiresIn: process.env.TIMEEXPIRES
+            expiresIn: process.env.EXPIRESRESETPASSWORD
         });
 
-        try{
-            await wa.sendMessage(`${
-                userData.phone
-            }@c.us`, `Halo ${
-                userData.fullname
-            }, Silahkan klik link berikut untuk mengubah password anda: ${
-                process.env.BASE_URL
-            }/auth/change-password/${
-                token
-            }`);
-        }catch(error){
-            // send respond error wa server
-            return res.status(500).json({
-                message: "Wa Error",
-                error
-            });
-        }
+        // try{
+        //     await wa.sendMessage(`${userData.phone}@c.us`, `Halo ${userData.fullname}, Silahkan klik link berikut untuk mengubah password anda: 
+        //         ${process.env.BASE_URL}/auth/change-password?token=${token}`);
+        // }catch(error){
+        //     // send respond error wa server
+        //     return res.status(500).json({
+        //         message: "Wa Error",
+        //         error
+        //     });
+        // }
+
+        return res.status(200).json({
+            message: "Token sent",
+            token
+        });
 
     } catch (error){
         return res.status(500).json({
@@ -225,9 +252,8 @@ exports.sendTokenChangePassword = async (req, res) => {
     }
 }
 
-exports.validateTokenChangePassword = async (req, res) => {
-    const {token} = req.params;
-
+exports.validateTokenChangePassword = async (req: Request, res: Response) => {
+    const {token} = req.query;
     try{
         const decoded = jsonwebtoken.verify(token, process.env.JWT_KEY);
         return res.status(200).json({
@@ -242,19 +268,30 @@ exports.validateTokenChangePassword = async (req, res) => {
     }
 }
 
-exports.changePassword = async (req, res) => {
+exports.changePassword = async (req: Request, res: Response) => {
 
-    const {id} = req.userData;
-    const {password} = req.body;
-
+    const {password, token} = req.body;
+    
     try{
+        const decoded = jsonwebtoken.verify(token, process.env.JWT_KEY);
+
         const user = await User.update({
-            password : await bcrypt.hash(password, await bcrypt.genSalt(10))
+            password : await bcrypt.hash(password, await bcrypt.genSalt(10)),
+            reset_password_token : null
         }, {
             where: {
-                id
+                id: decoded.id,
+                reset_password_token : token
             }
         })
+
+        console.log(user)
+
+        if(user[0] == false){
+            return res.status(401).json({
+                "message" : "token invalid"
+            });
+        }
 
         res.status(200).json({
             message: "Password changed successfully",

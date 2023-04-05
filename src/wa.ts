@@ -10,7 +10,7 @@ const client = new Client();
 
 const main = async () => {
 
-    await client.on('qr', qr => {
+    await client.on('qr', (qr: any) => {
             qrcode.generate(qr, {small: true});
     });
 
@@ -38,4 +38,7 @@ const main = async () => {
 
 }
 
-module.exports = {client, qrcode, main};
+// module.exports = {client, qrcode, main};
+
+// exports client, qrcode, main
+export {client, qrcode, main};
