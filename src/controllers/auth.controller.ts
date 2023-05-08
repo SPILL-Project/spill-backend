@@ -1,15 +1,19 @@
-const {User} = require("../db/models")
+// Library Zone
 const bcrypt = require("bcrypt")
 const {client:wa} = require('../wa');
 const { v4 : uuidv4 } = require('uuid');
 const jsonwebtoken = require('jsonwebtoken');
+import { Request, Response } from "express";
 require('dotenv').config();
 
+// database Zone
+const {User} = require("../db/models")
+
+// Types Zone
 import UserCreateType from "../types/user.type"
-
-import { Request, Response } from "express";
-
 import UserRequestData from "../types/user.type";
+
+// Module Zone
 import { registerValidation } from "../validations/auth.validation";
 
 exports.registerUser = async (req: Request, res: Response) => {
@@ -41,19 +45,19 @@ exports.registerUser = async (req: Request, res: Response) => {
             });
         }
 
-        // cek apakah phone terdaftar di wa
-        const isRegistered = await wa.isRegisteredUser(`${phone}@c.us`)
+        // // cek apakah phone terdaftar di wa
+        // const isRegistered = await wa.isRegisteredUser(`${phone}@c.us`)
 
-        if(!isRegistered){
-            return res.status(404).json({
-                message: "Phone not registered in whatsapp"
-            });
-        }
+        // if(!isRegistered){
+        //     return res.status(404).json({
+        //         message: "Phone not registered in whatsapp"
+        //     });
+        // }
         
         const kode = Math.floor(100000 + Math.random() * 900000)
         
         try{
-            await wa.sendMessage(`${phone}@c.us`, `Halo ${fullname}, Selamat datang di aplikasi kami. Silahkan verifikasi akun anda dengan kode berikut: ${kode}`);
+            // await wa.sendMessage(`${phone}@c.us`, `Halo ${fullname}, Selamat datang di aplikasi kami. Silahkan verifikasi akun anda dengan kode berikut: ${kode}`);
 
             const user: UserCreateType = await User.create({
                 id: uuidv4(),

@@ -9,17 +9,20 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      name: {
+      judul: {
         type: Sequelize.STRING
       },
-      image: {
+      gambar: {
         type: Sequelize.STRING
       },
-      description: {
-        type: Sequelize.TEXT
-      },
-      price: {
+      harga: {
         type: Sequelize.INTEGER
+      },
+      link: {
+        type: Sequelize.STRING
+      },
+      terjual:{
+        type: Sequelize.STRING
       },
       createdAt: {
         allowNull: false,

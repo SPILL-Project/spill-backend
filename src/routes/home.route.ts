@@ -5,13 +5,10 @@ import { Router } from "express";
 const HomeRouter: Router = Router();
 const middleware = require('../middleware');
 
-// const { HomeUser } = require('../controller/HomeController');
+const { HomeUser, HomeSearch } = require('../controllers/home.controller');
 // const middleware = require('../middleware');
 
-HomeRouter.get('/user', middleware ,(req,res) => {
-    res.send({
-        message: "Hello World"
-    })
-});
+HomeRouter.get('/user' ,HomeUser);
+HomeRouter.get('/user/:product', HomeSearch)
 
 export default HomeRouter;
