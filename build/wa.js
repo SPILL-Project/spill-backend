@@ -13,11 +13,11 @@ exports.main = exports.qrcode = exports.client = void 0;
 const qrcode = require('qrcode-terminal');
 exports.qrcode = qrcode;
 const { Client } = require('whatsapp-web.js');
-// const client = new Client({
-//   puppeteer: {headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-extensions']}
-// });
-const client = new Client();
+const client = new Client({
+    puppeteer: { headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-extensions'] }
+});
 exports.client = client;
+// const client = new Client();
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
     yield client.on('qr', (qr) => {
         qrcode.generate(qr, { small: true });
