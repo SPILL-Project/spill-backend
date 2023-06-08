@@ -6,7 +6,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.routes = void 0;
 const auth_route_1 = __importDefault(require("./auth.route"));
 const home_route_1 = __importDefault(require("./home.route"));
+const welcome_route_1 = __importDefault(require("./welcome.route"));
 const _routes = [
+    ["/", welcome_route_1.default],
     ["/auth", auth_route_1.default],
     ["/home", home_route_1.default]
 ];
