@@ -34,5 +34,5 @@ app.listen(port, () => {
     console.log(`Server started at http://localhost:${port}`);
 });
 
-// import {main} from "./wa";
-// main()
+import {main} from "./wa";
+main()
