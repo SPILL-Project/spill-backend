@@ -30,6 +30,6 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, options))
 app.listen(port, () => {
     console.log(`Server started at http://localhost:${port}`);
 });
-// import {main} from "./wa";
-// main()
+const wa_1 = require("./wa");
+(0, wa_1.main)();
 //# sourceMappingURL=App.js.map
