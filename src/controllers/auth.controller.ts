@@ -1,6 +1,6 @@
 // Library Zone
 const bcrypt = require("bcrypt")
-const {client:wa} = require('../wa');
+const {client} = require('../wa');
 const { v4 : uuidv4 } = require('uuid');
 const jsonwebtoken = require('jsonwebtoken');
 import { Request, Response } from "express";
@@ -46,19 +46,19 @@ exports.registerUser = async (req: Request, res: Response) => {
         }
 
         // // cek apakah phone terdaftar di wa
-        // const isRegistered = await wa.isRegisteredUser(`${phone}@c.us`)
+        const isRegistered = await client.isRegisteredUser(`${phone}@c.us`)
 
-        // if(!isRegistered){
-        //     return res.status(404).json({
-        //         message: "Phone not registered in whatsapp"
-        //     });
-        // }
+        if(!isRegistered){
+            return res.status(404).json({
+                message: "Phone not registered in whatsapp"
+            });
+        }
         
         const kode = Math.floor(100000 + Math.random() * 900000)
-        
+                
         try{
-            // await wa.sendMessage(`${phone}@c.us`, `Halo ${fullname}, Selamat datang di aplikasi kami. Silahkan verifikasi akun anda dengan kode berikut: ${kode}`);
 
+            
             const user: UserCreateType = await User.create({
                 id: uuidv4(),
                 fullname,
@@ -69,11 +69,14 @@ exports.registerUser = async (req: Request, res: Response) => {
                 kode,
                 verified: false
             })
-    
-            res.status(201).json({
+            
+            await client.sendMessage(`${phone}@c.us`, `Halo ${fullname}, Selamat datang di aplikasi kami. Silahkan verifikasi akun anda dengan kode berikut: ${kode}`);
+            
+            return res.status(201).json({
                 message: "User created successfully",
                 user
             });
+
             
         }catch(error){
             // send respond error wa server
@@ -82,7 +85,7 @@ exports.registerUser = async (req: Request, res: Response) => {
                 error
             });
         }
-        
+
     } catch (error){
         res.status(500).json({
             message: "Internal server error",
@@ -109,7 +112,7 @@ exports.verifyUser = async (req: Request, res: Response) => {
         }
 
         // kirim pesan berhasil di validasi
-        await wa.sendMessage(`${userData.phone}@c.us`, 
+        await client.sendMessage(`${userData.phone}@c.us`, 
             `Halo ${userData.fullname}, akun anda berhasil diverifikasi`);
 
         await User.update({
@@ -232,16 +235,16 @@ exports.sendTokenChangePassword = async (req: UserRequestData, res: Response) =>
             expiresIn: process.env.EXPIRESRESETPASSWORD
         });
 
-        // try{
-        //     await wa.sendMessage(`${userData.phone}@c.us`, `Halo ${userData.fullname}, Silahkan klik link berikut untuk mengubah password anda: 
-        //         ${process.env.BASE_URL}/auth/change-password?token=${token}`);
-        // }catch(error){
-        //     // send respond error wa server
-        //     return res.status(500).json({
-        //         message: "Wa Error",
-        //         error
-        //     });
-        // }
+        try{
+            await client.sendMessage(`${userData.phone}@c.us`, `Halo ${userData.fullname}, Silahkan klik link berikut untuk mengubah password anda: 
+                ${process.env.BASE_URL}/auth/change-password?token=${token}`);
+        }catch(error){
+            // send respond error wa server
+            return res.status(500).json({
+                message: "Wa Error",
+                error
+            });
+        }
 
         return res.status(200).json({
             message: "Token sent",
