@@ -15,10 +15,10 @@ async function getRandomUserId() {
 
 const getRandomDate = (start, end) => {
   return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
-}
+};
 
 module.exports = {
-  async up (queryInterface, Sequelize) {
+  async up(queryInterface, Sequelize) {
     const reviews = [];
 
     for (let i = 1; i <= 100; i++) {
@@ -40,7 +40,7 @@ module.exports = {
     return queryInterface.bulkInsert('Reviews', reviews);
   },
 
-  async down (queryInterface, Sequelize) {
+  async down(queryInterface, Sequelize) {
     await queryInterface.bulkDelete('Reviews', null, {});
   },
 };
